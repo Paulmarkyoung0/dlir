@@ -35,7 +35,7 @@ parser.add_argument("--data_labda", type=float,
                     dest="data_labda", default=0.02,
                     help="data_labda loss: suggested range 0.1 to 10")
 parser.add_argument("--smth_labda", type=float,
-                    dest="smth_labda", default=0.02,
+                    dest="smth_labda", default=5.0,
                     help="labda loss: suggested range 0.1 to 10")
 parser.add_argument("--checkpoint", type=int,
                     dest="checkpoint", default=4000,
@@ -93,7 +93,6 @@ def dice(pred1, truth1):
 def save_checkpoint(state, save_dir, save_filename, max_model_num=10):
     torch.save(state, save_dir + save_filename)
     model_lists = natsorted(glob.glob(save_dir + '*'))
-    # print(model_lists)
     while len(model_lists) > max_model_num:
         os.remove(model_lists[0])
         model_lists = natsorted(glob.glob(save_dir + '*'))
@@ -122,16 +121,7 @@ def train():
     for param in transform.parameters():
         param.requires_grad = False
         param.volatile = True
-    #for name, param in model.named_parameters():
-    #    if param.requires_grad:
-    #        print(name, param.data)
-    #aos_params = list(model.ic_block.param)
-    #other_params = [p for p in model.parameters() if p not in aos_params]
-    #aos_params = [p for n,p in model.named_parameters() if n.startswith('ic_block.')]
-    #other_params = [p for n,p in model.named_parameters() if not n.startswith('ic_block.')]
-    #optimizer = torch.optim.Adam([{'params': other_params},{'params': aos_params, 'lr': 1e-4}], lr=lr)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-    # optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9)
 
     lossall = np.zeros((3, iteration))
     train_set = TrainDataset(datapath,img_file='train_list.txt',trainingset = trainingset)
@@ -219,24 +209,15 @@ def train():
 def save_flow(X, Y, X_Y, f_xy, sample_path):
     x = X.data.cpu().numpy()
     y = Y.data.cpu().numpy()
-#    print('AAAAAAAAAAAAAAAAAAAAAAAA shape: {}, {}, {}, {}'.format(x.shape, pred.shape, x_pred.shape, flow.shape))
-    # pred = pred.data.cpu().numpy()
     x_pred = X_Y.data.cpu().numpy()
-    # pred = pred[0,...]
     x_pred = x_pred[0,...]
     x = x[0,...]
     y = y[0,...]
     
     flow = f_xy.data.cpu().numpy()
     op_flow =flow[0,:,:,:]
-    # quiver_flow = op_flow.copy()
-    # op_flow[0, :, :] = op_flow[0, :, :] / 2 * op_flow.shape[-2]
-    # op_flow[1, :, :] = op_flow[1, :, :] / 2 * op_flow.shape[-1]
 
-
-#    print(pred.max())
     plt.subplots(figsize=(7, 4))
-    # plt.subplots()
     plt.subplot(231)
     plt.imshow(x[0, :, :], cmap='gray', vmin=0, vmax=1)
     plt.axis('off')
@@ -247,19 +228,13 @@ def save_flow(X, Y, X_Y, f_xy, sample_path):
     plt.imshow(x_pred[0, :, :], cmap='gray', vmin=0, vmax=1)
     plt.axis('off')
     plt.subplot(234)
-    # plt.subplot(245)
-    # plt.imshow(x_pred[0, :, :], cmap='gray')
-    # plt.axis('off')
-    # plt.subplot(246)
-    # plt.imshow(x[0, :, :], cmap='gray')
+
     interval = 7
     for i in range(0,op_flow.shape[1]-1,interval):
         plt.plot(op_flow[0,i,:], op_flow[1,i,:],c='g',lw=1)
     #plot the vertical lines
     for i in range(0,op_flow.shape[2]-1,interval):
         plt.plot(op_flow[0,:,i], op_flow[1,:,i],c='g',lw=1)
-#    plt.axis((-1,1,-1,1))
-    #plt.axis('equal')  
     plt.xlim(-1, 1)
     plt.ylim(-1, 1)
     plt.axis('off')
