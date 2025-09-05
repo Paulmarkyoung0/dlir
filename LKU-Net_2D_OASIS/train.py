@@ -4,7 +4,6 @@ import sys
 from argparse import ArgumentParser
 import numpy as np
 import torch
-import torch.nn as nn
 from Models import *
 from Functions import *
 import torch.utils.data as Data
@@ -12,7 +11,7 @@ import matplotlib.pyplot as plt
 from natsort import natsorted
 import csv
 
-from pytorch_msssim import ssim, ms_ssim, SSIM, MS_SSIM
+from pytorch_msssim import MS_SSIM
 
 parser = ArgumentParser()
 parser.add_argument("--lr", type=float,
