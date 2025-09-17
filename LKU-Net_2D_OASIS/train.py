@@ -110,12 +110,8 @@ def train():
         ms_ssim_module = MS_SSIM(data_range=1, size_average=True, channel=1, win_size=9)
         loss_similarity = SAD().loss
     loss_smooth = smoothloss
-#    loss_magnitude = magnitude_loss
-#    loss_Jdet = neg_Jdet_loss
 
     transform = SpatialTransform().cuda()
-#    diff_transform = DiffeomorphicTransform(time_step=7).cuda()
-#    com_transform = CompositionTransform().cuda()
 
     for param in transform.parameters():
         param.requires_grad = False
@@ -191,12 +187,6 @@ def train():
                         writer.writerow([step, csv_dice])
             if (step * 10 % n_checkpoint == 0):
                 sample_path = os.path.join(model_dir, '{:08d}-images.jpg'.format(step))
-                # h, w = f_xy.shape[-2:]
-                # grid_h, grid_w = torch.meshgrid([torch.linspace(-1, 1, h), torch.linspace(-1, 1, w)])
-                # s = torch.stack((grid_w,grid_h), dim=0).cuda().float()
-                # print(s.unsqueeze(0).shape)
-                # print(mov_img.shape)
-                # s = transform(s.unsqueeze(0),f_xy.permute(0, 2, 3, 1))
                 save_flow(mov_img, fix_img, warped_mov, grid.permute(0, 3, 1, 2), sample_path)
             step += 1
 
