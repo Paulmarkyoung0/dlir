@@ -1,5 +1,3 @@
-import os
-import glob
 import sys
 from argparse import ArgumentParser
 import numpy as np
@@ -10,6 +8,7 @@ import torch.utils.data as Data
 import matplotlib.pyplot as plt
 from natsort import natsorted
 import csv
+from pathlib import Path
 
 from pytorch_msssim import MS_SSIM
 
@@ -90,16 +89,14 @@ def dice(pred1, truth1):
     return dice_35/(len(mask_value4)-1)
 
 def save_checkpoint(state, save_dir, save_filename, max_model_num=10):
-    torch.save(state, save_dir + save_filename)
-    model_lists = natsorted(glob.glob(save_dir + '*'))
+    torch.save(state, Path(save_dir) / save_filename)
+    model_lists = natsorted(Path(save_dir).iterdir())
     while len(model_lists) > max_model_num:
-        os.remove(model_lists[0])
-        model_lists = natsorted(glob.glob(save_dir + '*'))
+        model_lists.pop(0).unlink()
 
 def train():
-    use_cuda = True
-    device = torch.device("cuda" if use_cuda else "cpu")
-    model = UNet(2, 2, start_channel).cuda()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = UNet(2, 2, start_channel).to(device)
     if using_l2 == 1:
         loss_similarity = MSE().loss
     elif using_l2 == 0:
@@ -111,7 +108,7 @@ def train():
         loss_similarity = SAD().loss
     loss_smooth = smoothloss
 
-    transform = SpatialTransform().cuda()
+    transform = SpatialTransform().to(device)
 
     for param in transform.parameters():
         param.requires_grad = False
@@ -123,36 +120,29 @@ def train():
     training_generator = Data.DataLoader(dataset=train_set, batch_size=bs, shuffle=True, num_workers=4)
     test_set = ValidationDataset(opt.datapath,img_file='val_list.txt')
     test_generator = Data.DataLoader(dataset=test_set, batch_size=bs, shuffle=False, num_workers=2)
-    model_dir = './L2ss_{}_Chan_{}_Smth_{}_Set_{}_LR_{}/'.format(using_l2, start_channel, smooth, trainingset, lr)
-    model_dir_pth = './L2ss_{}_Chan_{}_Smth_{}_Set_{}_LR_{}_Pth/'.format(using_l2, start_channel, smooth, trainingset, lr)
-    csv_name = 'L2ss_{}_Chan_{}_Smth_{}_Set_{}_LR_{}.csv'.format(using_l2, start_channel, smooth, trainingset, lr)
+    base_name = './L2ss_{}_Chan_{}_Smth_{}_Set_{}_LR_{}/'.format(using_l2, start_channel, smooth, trainingset, lr)
+    model_dir = Path(base_name)
+    model_dir_pth = Path(base_name + '_Pth')
+    csv_name = base_name + '.csv'
     f = open(csv_name, 'w')
     with f:
         fnames = ['Index','Dice']
         writer = csv.DictWriter(f, fieldnames=fnames)
         writer.writeheader()
 
-    if not os.path.isdir(model_dir):
-        os.mkdir(model_dir)
-    if not os.path.isdir(model_dir_pth):
-        os.mkdir(model_dir_pth)
+    model_dir.mkdir(parents=True, exist_ok=True)
+    model_dir_pth.mkdir(parents=True, exist_ok=True)
     
     
     step = 1
 
     while step <= iteration:
         for mov_img, fix_img in training_generator:
-
-            fix_img = fix_img.cuda().float()
-
-            mov_img = mov_img.cuda().float()
-
-            # fix_lab = fix_lab.cuda().float()
-
-            # mov_lab = mov_lab.cuda().float()
-            
+            fix_img = fix_img.to(device).float()
+            mov_img = mov_img.to(device).float()
+            # fix_lab = fix_lab.to(device).float()
+            # mov_lab = mov_lab.to(device).float()
             f_xy = model(mov_img, fix_img)
-            
             grid, warped_mov = transform(mov_img, f_xy.permute(0, 2, 3, 1))
            
             loss1 = loss_similarity(fix_img, warped_mov) # GT shall be 1st Param
@@ -180,20 +170,20 @@ def train():
                     modelname = 'DiceVal_{:.4f}_Step_{:09d}.pth'.format(np.mean(Dices_Validation), step)
                     csv_dice = np.mean(Dices_Validation)
                     save_checkpoint(model.state_dict(), model_dir_pth, modelname)
-                    np.save(model_dir + 'Loss.npy', lossall)
+                    np.save(model_dir / 'Loss.npy', lossall)
                     f = open(csv_name, 'a')
                     with f:
                         writer = csv.writer(f)
                         writer.writerow([step, csv_dice])
             if (step * 10 % n_checkpoint == 0):
-                sample_path = os.path.join(model_dir, '{:08d}-images.jpg'.format(step))
+                sample_path = model_dir / '{:08d}-images.jpg'.format(step)
                 save_flow(mov_img, fix_img, warped_mov, grid.permute(0, 3, 1, 2), sample_path)
             step += 1
 
             if step > iteration:
                 break
         print("one epoch pass")
-    np.save(model_dir + '/Loss.npy', lossall)
+    np.save(model_dir / 'Loss.npy', lossall)
 
 def save_flow(X, Y, X_Y, f_xy, sample_path):
     x = X.data.cpu().numpy()

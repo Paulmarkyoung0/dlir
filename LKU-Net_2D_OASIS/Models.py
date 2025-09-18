@@ -31,7 +31,6 @@ class LK_encoder(nn.Module):
                 nn.Conv2d(in_channels, out_channels, kernel_size, stride=stride, padding=padding, bias=bias))
         return layer
     def forward(self, inputs):
-        # print(self.layer_regularKernel)
         regularKernel = self.layer_regularKernel(inputs)
         largeKernel = self.layer_largeKernel(inputs)
         oneKernel = self.layer_oneKernel(inputs)
@@ -163,26 +162,16 @@ class SpatialTransform(nn.Module):
     def __init__(self):
         super(SpatialTransform, self).__init__()
     def forward(self, mov_image, flow, mod = 'bilinear'):
-        # d2, h2, w2 = mov_image.shape[-3:]
         h2, w2 = mov_image.shape[-2:]
-        # grid_d, grid_h, grid_w = torch.meshgrid([torch.linspace(-1, 1, d2), torch.linspace(-1, 1, h2), torch.linspace(-1, 1, w2)])
         grid_h, grid_w = torch.meshgrid([torch.linspace(-1, 1, h2), torch.linspace(-1, 1, w2)])
         grid_h = grid_h.cuda().float()
-        # grid_d = grid_d.cuda().float()
         grid_w = grid_w.cuda().float()
-        # grid_d = nn.Parameter(grid_d, requires_grad=False)
         grid_w = nn.Parameter(grid_w, requires_grad=False)
         grid_h = nn.Parameter(grid_h, requires_grad=False)
         flow_h = flow[:,:,:,0]
         flow_w = flow[:,:,:,1]
-        # flow_w = flow[:,:,:,2]
-        #Softsign
-        #disp_d = (grid_d + (flow_d * 2 / d2)).squeeze(1)
-        #disp_h = (grid_h + (flow_h * 2 / h2)).squeeze(1)
-        #disp_w = (grid_w + (flow_w * 2 / w2)).squeeze(1)
         
         # Remove Channel Dimension
-        # disp_d = (grid_d + (flow_d)).squeeze(1)
         disp_h = (grid_h + (flow_h)).squeeze(1)
         disp_w = (grid_w + (flow_w)).squeeze(1)
         sample_grid = torch.stack((disp_w, disp_h), 3)  # shape (N, D, H, W, 3)
@@ -203,8 +192,6 @@ class DiffeomorphicTransform(nn.Module):
         grid_w = nn.Parameter(grid_w, requires_grad=False)
         grid_h = nn.Parameter(grid_h, requires_grad=False)
         flow = flow / (2 ** self.time_step)
-
-        
         
         for i in range(self.time_step):
             flow_h = flow[:,:,:,0]
@@ -214,26 +201,11 @@ class DiffeomorphicTransform(nn.Module):
             
             deformation = torch.stack((disp_w,disp_h), dim=3)
             flow = flow + torch.nn.functional.grid_sample(flow, deformation, mode='bilinear',padding_mode="border")
-            #Softsign
-            #disp_d = (grid_d + (flow_d * 2 / d2)).squeeze(1)
-            #disp_h = (grid_h + (flow_h * 2 / h2)).squeeze(1)
-            #disp_w = (grid_w + (flow_w * 2 / w2)).squeeze(1)
-            
-            # Remove Channel Dimension
-            #disp_h = (grid_h + (flow_h)).squeeze(1)
-            #disp_w = (grid_w + (flow_w)).squeeze(1)
-
-            #sample_grid = torch.stack((disp_w, disp_h), 3)  # shape (N, H, W, 2)
-            #flow = torch.nn.functional.grid_sample(mov_image, sample_grid, mode = mod)
-        
         return flow
 
 
 def smoothloss(y_pred):
-    #print('smoothloss y_pred.shape    ',y_pred.shape)
-    #[N,3,D,H,W]
     h2, w2 = y_pred.shape[-2:]
-    # dy = torch.abs(y_pred[:,:,1:, :, :] - y_pred[:,:, :-1, :, :]) / 2 * d2
     dx = torch.abs(y_pred[:,:, 1:, :] - y_pred[:, :, :-1, :]) / 2 * h2
     dz = torch.abs(y_pred[:,:, :, 1:] - y_pred[:, :, :, :-1]) / 2 * w2
     return (torch.mean(dx * dx) + torch.mean(dz*dz))/2.0
