@@ -1,7 +1,6 @@
 import torch 
 import torch.nn as nn
 import torch.nn.functional as F
-import math
 import numpy as np
 
 class LK_encoder(nn.Module):
@@ -159,15 +158,11 @@ class UNet(nn.Module):
 
 
 class SpatialTransform(nn.Module):
-    def __init__(self):
-        super(SpatialTransform, self).__init__()
     def forward(self, mov_image, flow, mod = 'bilinear'):
         h2, w2 = mov_image.shape[-2:]
         grid_h, grid_w = torch.meshgrid([torch.linspace(-1, 1, h2), torch.linspace(-1, 1, w2)])
         grid_h = grid_h.cuda().float()
         grid_w = grid_w.cuda().float()
-        grid_w = nn.Parameter(grid_w, requires_grad=False)
-        grid_h = nn.Parameter(grid_h, requires_grad=False)
         flow_h = flow[:,:,:,0]
         flow_w = flow[:,:,:,1]
         
@@ -181,7 +176,7 @@ class SpatialTransform(nn.Module):
 
 class DiffeomorphicTransform(nn.Module):
     def __init__(self, time_step=7):
-        super(DiffeomorphicTransform, self).__init__()
+        super().__init__()
         self.time_step = time_step
 
     def forward(self, flow):
@@ -189,8 +184,6 @@ class DiffeomorphicTransform(nn.Module):
         grid_h, grid_w = torch.meshgrid([torch.linspace(-1, 1, h2), torch.linspace(-1, 1, w2)])
         grid_h = grid_h.cuda().float()
         grid_w = grid_w.cuda().float()
-        grid_w = nn.Parameter(grid_w, requires_grad=False)
-        grid_h = nn.Parameter(grid_h, requires_grad=False)
         flow = flow / (2 ** self.time_step)
         
         for i in range(self.time_step):
@@ -206,8 +199,8 @@ class DiffeomorphicTransform(nn.Module):
 
 def smoothloss(y_pred):
     h2, w2 = y_pred.shape[-2:]
-    dx = torch.abs(y_pred[:,:, 1:, :] - y_pred[:, :, :-1, :]) / 2 * h2
-    dz = torch.abs(y_pred[:,:, :, 1:] - y_pred[:, :, :, :-1]) / 2 * w2
+    dx = (y_pred[:,:, 1:, :] - y_pred[:, :, :-1, :]) / 2 * h2
+    dz = (y_pred[:,:, :, 1:] - y_pred[:, :, :, :-1]) / 2 * w2
     return (torch.mean(dx * dx) + torch.mean(dz*dz))/2.0
 
 

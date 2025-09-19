@@ -1,4 +1,3 @@
-import sys
 from argparse import ArgumentParser
 import numpy as np
 import torch
@@ -43,7 +42,6 @@ parser.add_argument("--start_channel", type=int,
                     help="number of start channels")
 parser.add_argument("--datapath", type=str,
                     dest="datapath",
-                    #default='/export/local/xxj946/AOSBraiCN2',
                     default='/bask/projects/d/duanj-ai-imaging/Accreg/brain/OASIS_AffineData/',
                     help="data path for training images")
 parser.add_argument("--trainingset", type=int,
@@ -76,7 +74,6 @@ def dice(pred1, truth1):
     mask4_value2 = np.unique(truth1)
     mask_value4 = list(set(mask4_value1) & set(mask4_value2))
     for k in mask_value4[1:]:
-        #print(k)
         truth = truth1.copy()
         pred = pred1.copy()
         truth[truth!=k]=0
@@ -84,7 +81,6 @@ def dice(pred1, truth1):
         truth=truth/k
         pred=pred/k
         intersection = np.sum(pred[truth==1.0]) * 2.0
-        # print(intersection)
         dice_35 = dice_35 + intersection / (np.sum(pred) + np.sum(truth))
     return dice_35/(len(mask_value4)-1)
 
@@ -110,9 +106,6 @@ def train():
 
     transform = SpatialTransform().to(device)
 
-    for param in transform.parameters():
-        param.requires_grad = False
-        param.volatile = True
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
     lossall = np.zeros((3, iteration))
@@ -120,20 +113,18 @@ def train():
     training_generator = Data.DataLoader(dataset=train_set, batch_size=bs, shuffle=True, num_workers=4)
     test_set = ValidationDataset(opt.datapath,img_file='val_list.txt')
     test_generator = Data.DataLoader(dataset=test_set, batch_size=bs, shuffle=False, num_workers=2)
-    base_name = './L2ss_{}_Chan_{}_Smth_{}_Set_{}_LR_{}/'.format(using_l2, start_channel, smooth, trainingset, lr)
+    base_name = f'L2ss_{using_l2}_Chan_{start_channel}_Smth_{smooth}_Set_{trainingset}_LR_{lr}'
     model_dir = Path(base_name)
     model_dir_pth = Path(base_name + '_Pth')
     csv_name = base_name + '.csv'
-    f = open(csv_name, 'w')
-    with f:
+    with open(csv_name, 'w') as f:
         fnames = ['Index','Dice']
         writer = csv.DictWriter(f, fieldnames=fnames)
         writer.writeheader()
 
     model_dir.mkdir(parents=True, exist_ok=True)
     model_dir_pth.mkdir(parents=True, exist_ok=True)
-    
-    
+        
     step = 1
 
     while step <= iteration:
@@ -144,7 +135,7 @@ def train():
             # mov_lab = mov_lab.to(device).float()
             f_xy = model(mov_img, fix_img)
             grid, warped_mov = transform(mov_img, f_xy.permute(0, 2, 3, 1))
-           
+            
             loss1 = loss_similarity(fix_img, warped_mov) # GT shall be 1st Param
             loss5 = loss_smooth(f_xy)
             
@@ -154,8 +145,7 @@ def train():
             optimizer.step()
 
             lossall[:,step] = np.array([loss.item(),loss1.item(),loss5.item()])
-            sys.stdout.write("\r" + 'step "{0}" -> training loss "{1:.4f}" - sim "{2:.4f}" -smo "{3:.4f}" '.format(step, loss.item(),loss1.item(),loss5.item()))
-            sys.stdout.flush()
+            print(f'step "{step}" -> training loss "{loss:.4f}" - sim "{loss1:.4f}" -smo "{loss5:.4f}" ', end='\r', flush=True)
 
             if (step % n_checkpoint == 0):
                 with torch.no_grad():
