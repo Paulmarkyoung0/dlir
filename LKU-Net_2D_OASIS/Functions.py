@@ -14,12 +14,12 @@ def load_images(image_dir, supervision):
     hist_path = image_dir / 'hist.png'
     hist_img = to_tensor(io.imread(hist_path))
     oct_path = image_dir / 'oct.png'
-    oct_img = to_tensor(io.imread(oct_path, as_gray=True)).unsqueeze(0)
+    oct_img = to_tensor(io.imread(oct_path, as_gray=True))
     if supervision == 'dice':
         hist_seg_path = image_dir / 'hist_seg.png'
-        hist_seg = to_tensor(io.imread(hist_seg_path, as_gray=True)).unsqueeze(0)
+        hist_seg = to_tensor(io.imread(hist_seg_path, as_gray=True))
         oct_seg_path = image_dir / 'oct_seg.png'
-        oct_seg = to_tensor(io.imread(oct_seg_path, as_gray=True)).unsqueeze(0)
+        oct_seg = to_tensor(io.imread(oct_seg_path, as_gray=True))
         return hist_img, oct_img, hist_seg, oct_seg
     elif supervision == 'truth':
         truth_path = image_dir / 'truth.png'
