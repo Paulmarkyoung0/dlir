@@ -131,23 +131,35 @@ class UNet(nn.Module):
 
         e4 = self.ec8(e3)
         e4 = self.ec9(e4)
-
-        d0 = torch.cat((self.up1(e4), e3), 1)
+        # Upsample and ensure spatial sizes match before concatenation with encoder features
+        up1_out = self.up1(e4)
+        if up1_out.shape[2:] != e3.shape[2:]:
+            up1_out = F.interpolate(up1_out, size=e3.shape[2:], mode='bilinear', align_corners=False)
+        d0 = torch.cat((up1_out, e3), 1)
 
         d0 = self.dc1(d0)
         d0 = self.dc2(d0)
 
-        d1 = torch.cat((self.up2(d0), e2), 1)
+        up2_out = self.up2(d0)
+        if up2_out.shape[2:] != e2.shape[2:]:
+            up2_out = F.interpolate(up2_out, size=e2.shape[2:], mode='bilinear', align_corners=False)
+        d1 = torch.cat((up2_out, e2), 1)
 
         d1 = self.dc3(d1)
         d1 = self.dc4(d1)
 
-        d2 = torch.cat((self.up3(d1), e1), 1)
+        up3_out = self.up3(d1)
+        if up3_out.shape[2:] != e1.shape[2:]:
+            up3_out = F.interpolate(up3_out, size=e1.shape[2:], mode='bilinear', align_corners=False)
+        d2 = torch.cat((up3_out, e1), 1)
 
         d2 = self.dc5(d2)
         d2 = self.dc6(d2)
 
-        d3 = torch.cat((self.up4(d2), e0), 1)
+        up4_out = self.up4(d2)
+        if up4_out.shape[2:] != e0.shape[2:]:
+            up4_out = F.interpolate(up4_out, size=e0.shape[2:], mode='bilinear', align_corners=False)
+        d3 = torch.cat((up4_out, e0), 1)
         d3 = self.dc7(d3)
         d3 = self.dc8(d3)
 
