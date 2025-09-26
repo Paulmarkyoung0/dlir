@@ -30,7 +30,6 @@ def load_images(image_dir, supervision):
 
 class TrainDataset(Data.Dataset):
     def __init__(self, data_path, img_file=None, supervision='dice'):
-        'Initialization'
         super().__init__()
         self.data_path = Path(data_path)
         self.names = np.loadtxt(self.data_path / img_file, dtype='str')
