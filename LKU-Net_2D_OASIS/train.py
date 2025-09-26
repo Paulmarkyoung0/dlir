@@ -97,7 +97,7 @@ def save_checkpoint(state, save_dir, save_filename, max_model_num=10):
 
 def train():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = UNet(2, 2, start_channel).to(device)
+    model = UNet(4, 2, start_channel).to(device)
     if using_l2 == 1:
         loss_similarity = MSE().loss
     elif using_l2 == 0:
@@ -145,7 +145,7 @@ def train():
             else:
                 truth_img = truths[0].to(device).float()
             print(mov_img.shape,fix_img.shape)
-            
+
             f_xy = model(mov_img, fix_img)
 
             grid, warped_mov = transform(mov_img, f_xy.permute(0, 2, 3, 1))
