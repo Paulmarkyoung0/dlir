@@ -144,7 +144,8 @@ def train():
                 fix_lab = fix_lab.to(device).float()
             else:
                 truth_img = truths[0].to(device).float()
-
+            print(mov_img.shape,fix_img.shape)
+            
             f_xy = model(mov_img, fix_img)
 
             grid, warped_mov = transform(mov_img, f_xy.permute(0, 2, 3, 1))
