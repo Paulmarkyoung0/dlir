@@ -42,7 +42,7 @@ parser.add_argument("--start_channel", type=int,
                     help="number of start channels")
 parser.add_argument("--datapath", type=str,
                     dest="datapath",
-                    default='/bask/projects/d/duanj-ai-imaging/Accreg/brain/OASIS_AffineData/',
+                    default='../data',
                     help="data path for training images")
 parser.add_argument("--trainingset", type=int,
                     dest="trainingset", default=4,
@@ -116,7 +116,7 @@ def train():
     lossall = np.zeros((3, iteration))
     train_set = TrainDataset(datapath,img_file='train_list.txt', supervision=loss_type)
     training_generator = Data.DataLoader(dataset=train_set, batch_size=bs, shuffle=True, num_workers=4)
-    test_set = ValidationDataset(opt.datapath,img_file='val_list.txt', supervision=loss_type)
+    test_set = ValidationDataset(datapath,img_file='val_list.txt', supervision=loss_type)
     test_generator = Data.DataLoader(dataset=test_set, batch_size=bs, shuffle=False, num_workers=2)
     base_name = f'L2ss_{using_l2}_Chan_{start_channel}_Smth_{smooth}_Set_{trainingset}_LR_{lr}'
     model_dir = Path(base_name)

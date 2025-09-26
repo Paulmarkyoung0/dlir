@@ -32,14 +32,14 @@ class TrainDataset(Data.Dataset):
     def __init__(self, data_path, img_file=None, supervision='dice'):
         super().__init__()
         self.data_path = Path(data_path)
-        self.names = np.loadtxt(self.data_path / img_file, dtype='str')
+        self.names = np.loadtxt(Path('..') / img_file, dtype='str')
         self.supervision = supervision
         
     def __len__(self):
         return len(self.names)
 
     def __getitem__(self, index):
-        image_dir = self.data_path / self.names[index]
+        image_dir = self.data_path / 'train' / self.names[index]
         return load_images(image_dir, self.supervision)
 
 
@@ -47,11 +47,11 @@ class ValidationDataset(Data.Dataset):
     def __init__(self, data_path, img_file=None, supervision=None):
         super().__init__()
         self.data_path = Path(data_path)
-        self.names = np.loadtxt(self.data_path / img_file, dtype='str')
+        self.names = np.loadtxt(Path('..') / img_file, dtype='str')
         self.supervision = supervision
     def __len__(self):
         return len(self.names)
     def __getitem__(self, index):
-        image_dir = self.data_path / self.names[index]
+        image_dir = self.data_path / 'test' / self.names[index]
         return load_images(image_dir, self.supervision)
     
