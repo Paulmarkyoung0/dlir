@@ -22,9 +22,9 @@ def load_images(image_dir, supervision):
     Returns:
         Tuple of tensors depending on supervision type
     """
-    hist_path = image_dir / 'hist.png'
+    hist_path = image_dir / 'hist.tiff'
     hist_img = to_tensor(io.imread(hist_path))
-    oct_path = image_dir / 'oct.png'
+    oct_path = image_dir / 'oct.tiff'
     oct_img = to_tensor(io.imread(oct_path, as_gray=True))
     oct_dims = oct_img.shape[1:]
     
@@ -39,13 +39,13 @@ def load_images(image_dir, supervision):
     hist_img = pad(hist_img, pad_list, mode='constant', value=0)
 
     if supervision == 'dice':
-        hist_seg_path = image_dir / 'hist_seg.png'
+        hist_seg_path = image_dir / 'hist_seg.tiff'
         hist_seg = to_tensor(io.imread(hist_seg_path, as_gray=True))
-        oct_seg_path = image_dir / 'oct_seg.png'
+        oct_seg_path = image_dir / 'oct_seg.tiff'
         oct_seg = to_tensor(io.imread(oct_seg_path, as_gray=True))
         return hist_img, oct_img, hist_seg, oct_seg
     elif supervision == 'truth':
-        truth_path = image_dir / 'truth.png'
+        truth_path = image_dir / 'truth.tiff'
         truth_img = to_tensor(io.imread(truth_path))
         return hist_img, oct_img, truth_img
     else:
