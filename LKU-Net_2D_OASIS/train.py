@@ -8,10 +8,11 @@ import matplotlib.pyplot as plt
 from natsort import natsorted
 import csv
 from pathlib import Path
-import warnings
-warnings.filterwarnings('ignore')
 
 from pytorch_msssim import MS_SSIM
+import logging
+logging.getLogger('tifffile').setLevel(logging.ERROR)
+
 
 parser = ArgumentParser()
 parser.add_argument("--lr", type=float,
