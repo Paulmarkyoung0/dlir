@@ -9,7 +9,7 @@ from natsort import natsorted
 import csv
 from pathlib import Path
 import warnings
-warnings.filterwarnings('ignore', module='tifffile')
+warnings.filterwarnings('ignore')
 
 from pytorch_msssim import MS_SSIM
 
