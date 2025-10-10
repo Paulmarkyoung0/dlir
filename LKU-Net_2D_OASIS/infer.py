@@ -110,9 +110,6 @@ def test(model_dir):
             V_xy = model(mov_img.float().to(device), fix_img.float().to(device))
             __,warped_mov_lab = transform(mov_lab.float().to(device), V_xy.permute(0, 2, 3, 1), mod = 'nearest')
             
-            #print('V_xy.shape . . . ', V_xy.shape)  #([1, 3, 160, 192, 224])
-            #print('warped_mov_lab.shape . . . ', warped_mov_lab.shape) #([1, 1, 160, 192, 224])
-            
             for bs_index in range(bs):
                 dice_bs = dice(warped_mov_lab[bs_index,...].data.cpu().numpy().copy(),fix_lab[bs_index,...].data.cpu().numpy().copy())
                 Dices_35.append(dice_bs)
