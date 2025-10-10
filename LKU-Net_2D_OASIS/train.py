@@ -242,28 +242,28 @@ def save_flow(X, Y, X_Y, f_xy, sample_path):
     x = X.data.cpu().numpy()
     y = Y.data.cpu().numpy()
     x_pred = X_Y.data.cpu().numpy()
-    x_pred = x_pred[0,...]
-    x = x[0,...]
-    y = y[0,...]
+    x_pred = x_pred[0]
+    x = x[0]
+    y = y[0]
     
     flow = f_xy.data.cpu().numpy()
-    op_flow =flow[0,:,:,:]
+    op_flow =flow[0]
 
     plt.subplots(figsize=(7, 4))
     plt.subplot(231)
-    plt.imshow(x[0, :, :], cmap='gray', vmin=0, vmax=1)
+    plt.imshow(x[0], cmap='gray', vmin=0, vmax=1)
     plt.axis('off')
     plt.subplot(232)
-    plt.imshow(y[0, :, :], cmap='gray', vmin=0, vmax=1)
+    plt.imshow(y[0], cmap='gray', vmin=0, vmax=1)
     plt.axis('off')
     plt.subplot(233)
-    plt.imshow(x_pred[0, :, :], cmap='gray', vmin=0, vmax=1)
+    plt.imshow(x_pred[0], cmap='gray', vmin=0, vmax=1)
     plt.axis('off')
     plt.subplot(234)
 
     interval = 7
     for i in range(0,op_flow.shape[1]-1,interval):
-        plt.plot(op_flow[0,i,:], op_flow[1,i,:],c='g',lw=1)
+        plt.plot(op_flow[0,i], op_flow[1,i],c='g',lw=1)
     #plot the vertical lines
     for i in range(0,op_flow.shape[2]-1,interval):
         plt.plot(op_flow[0,:,i], op_flow[1,:,i],c='g',lw=1)
@@ -271,10 +271,10 @@ def save_flow(X, Y, X_Y, f_xy, sample_path):
     plt.ylim(-1, 1)
     plt.axis('off')
     plt.subplot(235)
-    plt.imshow(abs(x[0, :, :]-y[0, :, :]), cmap='gray', vmin=0, vmax=1)
+    plt.imshow(abs(x[0]-y[0]), cmap='gray', vmin=0, vmax=1)
     plt.axis('off')
     plt.subplot(236)
-    plt.imshow(abs(x_pred[0, :, :]-y[0, :, :]), cmap='gray', vmin=0, vmax=1)
+    plt.imshow(abs(x_pred[0]-y[0]), cmap='gray', vmin=0, vmax=1)
     plt.axis('off')
     plt.savefig(sample_path,bbox_inches='tight')
     plt.close()
