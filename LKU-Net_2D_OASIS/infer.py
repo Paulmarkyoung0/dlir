@@ -7,7 +7,6 @@ from Models import UNet, SpatialTransform
 from Functions import ValidationDataset
 import torch.utils.data as Data
 from natsort import natsorted
-import csv
 from skimage import io
 
 parser = ArgumentParser()
@@ -31,7 +30,7 @@ parser.add_argument("--data_labda", type=float,
                     dest="data_labda", default=0.02,
                     help="data_labda loss: suggested range 0.1 to 10")
 parser.add_argument("--smth_labda", type=float,
-                    dest="smth_labda", default=5.0,
+                    dest="smth_labda", default=0.02,
                     help="labda loss: suggested range 0.1 to 10")
 parser.add_argument("--checkpoint", type=int,
                     dest="checkpoint", default=4000,
@@ -53,21 +52,6 @@ parser.add_argument("--using_l2", type=int,
 opt = parser.parse_args()
 
 
-def dice(pred1, truth1):
-    mask4_value1 = np.unique(pred1)
-    mask4_value2 = np.unique(truth1)
-    mask_value4 = list(set(mask4_value1) & set(mask4_value2))
-    
-    dice_35=np.zeros(len(mask_value4)-1)
-    index = 0
-    for k in mask_value4[1:]:
-        truth = truth1 == k
-        pred = pred1 == k
-        intersection = np.sum(pred * truth) * 2.0
-        dice_35[index]=intersection / (np.sum(pred) + np.sum(truth))
-        index = index + 1
-    return np.mean(dice_35)
-
 def test(model_dir):
     bs = 1
     model = UNet(2, 2, opt.start_channel).cuda()
@@ -83,10 +67,9 @@ def test(model_dir):
     transform = SpatialTransform().cuda()
     model.eval()
     transform.eval()
-    Dices_35=[]
     use_cuda = True
     device = torch.device("cuda" if use_cuda else "cpu")
-    test_set = ValidationDataset(opt.datapath,img_file='test_list.txt')
+    test_set = ValidationDataset(opt.datapath, img_file='test_list.txt')
     test_generator = Data.DataLoader(dataset=test_set, batch_size=bs, shuffle=False, num_workers=2)
     
     output_dir = Path('inference_outputs')
@@ -100,12 +83,8 @@ def test(model_dir):
             
             V_xy = model(mov_img_gpu, fix_img_gpu)
             _, warped_mov_img = transform(mov_img_gpu, V_xy.permute(0, 2, 3, 1))
-            _, warped_mov_lab = transform(mov_lab.float().to(device), V_xy.permute(0, 2, 3, 1), mod='nearest')
             
             for bs_index in range(bs):
-                dice_bs = dice(warped_mov_lab[bs_index,...].data.cpu().numpy().copy(),fix_lab[bs_index,...].data.cpu().numpy().copy())
-                Dices_35.append(dice_bs)
-                
                 moving_np = mov_img[bs_index, 0].cpu().numpy()
                 fixed_np = fix_img[bs_index, 0].cpu().numpy()
                 warped_np = warped_mov_img[bs_index, 0].cpu().numpy()
@@ -115,28 +94,11 @@ def test(model_dir):
                 io.imsave(output_dir / f'sample_{sample_idx:03d}_warped.png', warped_np)
                 
                 sample_idx += 1
-                
-    print(np.mean(Dices_35))
-    print(np.std(Dices_35))
-
-    return Dices_35
+    
+    print(f'Saved {sample_idx} image sets to {output_dir}')
 
 
 if __name__ == '__main__':
-    DICESCORES4=[]
-    DICESCORES35=[]
-    
-    csvname = 'Infer_L2ss_{}_Chan_{}_Smth_{}_Set_{}_LR_{}.csv'.format(opt.using_l2, opt.start_channel, opt.smth_labda, opt.trainingset, opt.lr)
-    f = open(csvname, 'w')
-
-    with f:
-        fnames = ['Dice35']
-        writer = csv.DictWriter(f, fieldnames=fnames)
-        writer.writeheader()
-    model_dir = Path('L2ss_{}_Chan_{}_Smth_{}_Set_{}_LR_{}_Pth'.format(opt.using_l2, opt.start_channel, opt.smth_labda, opt.trainingset, opt.lr))
+    model_dir = Path(f'L2ss_{opt.using_l2}_Chan_{opt.start_channel}_Smth_{opt.smth_labda}_Set_{opt.trainingset}_LR_{opt.lr}_Pth')
     print(model_dir)
-    dice35_temp= test(model_dir)
-    f = open(csvname, 'a')
-    with f:
-        writer = csv.writer(f)
-        writer.writerow(dice35_temp)
+    test(model_dir)
