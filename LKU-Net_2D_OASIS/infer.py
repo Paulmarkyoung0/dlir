@@ -5,8 +5,8 @@ from argparse import ArgumentParser
 import numpy as np
 import torch
 import torch.nn as nn
-from Models import *
-from Functions import *
+from Models import UNet, SpatialTransform
+from Functions import ValidationDataset
 import torch.utils.data as Data
 from natsort import natsorted
 import csv
@@ -56,26 +56,16 @@ opt = parser.parse_args()
 
 
 def dice(pred1, truth1):
-    
     mask4_value1 = np.unique(pred1)
     mask4_value2 = np.unique(truth1)
     mask_value4 = list(set(mask4_value1) & set(mask4_value2))
     
-    # print(mask_value4)
-    # assert 0 ==1
     dice_35=np.zeros(len(mask_value4)-1)
     index = 0
     for k in mask_value4[1:]:
-        #print(k)
         truth = truth1 == k
         pred = pred1 == k
-        # pred = pred1.copy()
-        # truth[truth!=k]=0
-        # pred[pred!=k]=0
-        # truth=truth/k
-        # pred=pred/k
         intersection = np.sum(pred * truth) * 2.0
-        # print(intersection)
         dice_35[index]=intersection / (np.sum(pred) + np.sum(truth))
         index = index + 1
     return np.mean(dice_35)
@@ -84,22 +74,15 @@ def test(model_dir):
     bs = 1
     model = UNet(2, 2, opt.start_channel).cuda()
     
-    
     model_idx = -1
-    print('Best model: {}'.format(natsorted(os.listdir(model_dir))[model_idx]))
+    print(f'Best model: {natsorted(os.listdir(model_dir))[model_idx]}')
     best_model = torch.load(model_dir + natsorted(os.listdir(model_dir))[model_idx])#['state_dict']
     model.load_state_dict(best_model)
     
     torch.backends.cudnn.benchmark = True
     transform = SpatialTransform().cuda()
-    # model.load_state_dict(torch.load(modelpath))
-    #model_lambda = model.ic_block.labda.data.cpu().numpy()
-    #model_odr = model.ic_block.odr.data.cpu().numpy()
     model.eval()
     transform.eval()
-#    diff_transform.eval()
-#    com_transform.eval()
-#    Dices_before=[]
     Dices_35=[]
     use_cuda = True
     device = torch.device("cuda" if use_cuda else "cpu")
@@ -130,21 +113,10 @@ if __name__ == '__main__':
         fnames = ['Dice35']
         writer = csv.DictWriter(f, fieldnames=fnames)
         writer.writeheader()
-    # try:
-        # for i in range(opt.checkpoint,opt.iteration,opt.checkpoint):
-            # model_path='./L2ss_{}_Chan_{}_Smth_{}_Set_{}_LR_{}/SYMNet_{}.pth'.format(opt.using_l2, opt.start_channel, opt.smth_labda, opt.trainingset, opt.lr, i)
-            # print(model_path)
     model_dir = './L2ss_{}_Chan_{}_Smth_{}_Set_{}_LR_{}_Pth/'.format(opt.using_l2, opt.start_channel, opt.smth_labda, opt.trainingset, opt.lr)
     print(model_dir)
     dice35_temp= test(model_dir)
     f = open(csvname, 'a')
     with f:
         writer = csv.writer(f)
-        # dice35_temp = np.array(dice35_temp)
         writer.writerow(dice35_temp)
-    # DICESCORES35.append(dice35_temp)
-    # except:
-        # print(np.argmax(DICESCORES35))
-        # print(np.max(DICESCORES35))
-    # print(np.argmax(DICESCORES35))
-    # print(np.max(DICESCORES35))
