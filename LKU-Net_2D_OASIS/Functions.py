@@ -35,7 +35,7 @@ def load_images(image_dir, supervision):
         pad_left = diff // 2
         pad_right = diff - pad_left
         pad_list.extend([pad_left, pad_right])
-    hist_img = pad(hist_img, pad_list, mode='constant', value=0)
+    hist_img = pad(hist_img, pad_list, mode='constant', value=1)
     if supervision == 'dice':
         hist_seg_path = image_dir / 'hist_seg.tiff'
         hist_seg = to_tensor(io.imread(hist_seg_path, as_gray=True))

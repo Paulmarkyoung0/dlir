@@ -1,6 +1,4 @@
-import os
-import glob
-import sys
+from pathlib import Path
 from argparse import ArgumentParser
 import numpy as np
 import torch
@@ -10,6 +8,7 @@ from Functions import ValidationDataset
 import torch.utils.data as Data
 from natsort import natsorted
 import csv
+from skimage import io
 
 parser = ArgumentParser()
 parser.add_argument("--lr", type=float,
@@ -32,7 +31,7 @@ parser.add_argument("--data_labda", type=float,
                     dest="data_labda", default=0.02,
                     help="data_labda loss: suggested range 0.1 to 10")
 parser.add_argument("--smth_labda", type=float,
-                    dest="smth_labda", default=0.02,
+                    dest="smth_labda", default=5.0,
                     help="labda loss: suggested range 0.1 to 10")
 parser.add_argument("--checkpoint", type=int,
                     dest="checkpoint", default=4000,
@@ -42,7 +41,6 @@ parser.add_argument("--start_channel", type=int,
                     help="number of start channels")
 parser.add_argument("--datapath", type=str,
                     dest="datapath",
-                    #default='/export/local/xxj946/AOSBraiCN2',
                     default='/bask/projects/d/duanj-ai-imaging/Accreg/brain/OASIS_AffineData/',
                     help="data path for training images")
 parser.add_argument("--trainingset", type=int,
@@ -75,8 +73,10 @@ def test(model_dir):
     model = UNet(2, 2, opt.start_channel).cuda()
     
     model_idx = -1
-    print(f'Best model: {natsorted(os.listdir(model_dir))[model_idx]}')
-    best_model = torch.load(model_dir + natsorted(os.listdir(model_dir))[model_idx])#['state_dict']
+    model_path = Path(model_dir)
+    model_files = natsorted(model_path.iterdir())
+    print(f'Best model: {model_files[model_idx].name}')
+    best_model = torch.load(model_files[model_idx])
     model.load_state_dict(best_model)
     
     torch.backends.cudnn.benchmark = True
@@ -88,14 +88,34 @@ def test(model_dir):
     device = torch.device("cuda" if use_cuda else "cpu")
     test_set = ValidationDataset(opt.datapath,img_file='test_list.txt')
     test_generator = Data.DataLoader(dataset=test_set, batch_size=bs, shuffle=False, num_workers=2)
+    
+    output_dir = Path('inference_outputs')
+    output_dir.mkdir(exist_ok=True)
+    
+    sample_idx = 0
     for __, __, mov_img, fix_img, mov_lab, fix_lab in test_generator:
         with torch.no_grad():
-            V_xy = model(mov_img.float().to(device), fix_img.float().to(device))
-            __,warped_mov_lab = transform(mov_lab.float().to(device), V_xy.permute(0, 2, 3, 1), mod = 'nearest')
+            mov_img_gpu = mov_img.float().to(device)
+            fix_img_gpu = fix_img.float().to(device)
+            
+            V_xy = model(mov_img_gpu, fix_img_gpu)
+            _, warped_mov_img = transform(mov_img_gpu, V_xy.permute(0, 2, 3, 1))
+            _, warped_mov_lab = transform(mov_lab.float().to(device), V_xy.permute(0, 2, 3, 1), mod='nearest')
             
             for bs_index in range(bs):
                 dice_bs = dice(warped_mov_lab[bs_index,...].data.cpu().numpy().copy(),fix_lab[bs_index,...].data.cpu().numpy().copy())
                 Dices_35.append(dice_bs)
+                
+                moving_np = mov_img[bs_index, 0].cpu().numpy()
+                fixed_np = fix_img[bs_index, 0].cpu().numpy()
+                warped_np = warped_mov_img[bs_index, 0].cpu().numpy()
+                
+                io.imsave(output_dir / f'sample_{sample_idx:03d}_moving.png', moving_np)
+                io.imsave(output_dir / f'sample_{sample_idx:03d}_fixed.png', fixed_np)
+                io.imsave(output_dir / f'sample_{sample_idx:03d}_warped.png', warped_np)
+                
+                sample_idx += 1
+                
     print(np.mean(Dices_35))
     print(np.std(Dices_35))
 
@@ -113,7 +133,7 @@ if __name__ == '__main__':
         fnames = ['Dice35']
         writer = csv.DictWriter(f, fieldnames=fnames)
         writer.writeheader()
-    model_dir = './L2ss_{}_Chan_{}_Smth_{}_Set_{}_LR_{}_Pth/'.format(opt.using_l2, opt.start_channel, opt.smth_labda, opt.trainingset, opt.lr)
+    model_dir = Path('L2ss_{}_Chan_{}_Smth_{}_Set_{}_LR_{}_Pth'.format(opt.using_l2, opt.start_channel, opt.smth_labda, opt.trainingset, opt.lr))
     print(model_dir)
     dice35_temp= test(model_dir)
     f = open(csvname, 'a')
