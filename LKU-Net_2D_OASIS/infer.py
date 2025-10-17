@@ -76,7 +76,7 @@ def test(model_dir):
     output_dir.mkdir(exist_ok=True)
     
     sample_idx = 0
-    for __, __, mov_img, fix_img, mov_lab, fix_lab in test_generator:
+    for mov_img, fix_img in test_generator:
         with torch.no_grad():
             mov_img_gpu = mov_img.float().to(device)
             fix_img_gpu = fix_img.float().to(device)
