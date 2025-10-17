@@ -92,6 +92,7 @@ def test(model_dir):
                     moving_np = img_as_ubyte(moving_np)
                     fixed_np = img_as_ubyte(fixed_np)
                     warped_np = img_as_ubyte(warped_np)
+                    print(moving_np.shape, warped_np.shape, fixed_np.shape)
                 except Exception as e:
                     print(f'Error processing sample {sample_idx}: {e}')
                     print(moving_np.dtype, moving_np.min(), moving_np.max())
