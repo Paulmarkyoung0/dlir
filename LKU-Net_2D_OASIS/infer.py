@@ -88,7 +88,10 @@ def test(model_dir):
                 moving_np = mov_img[bs_index, 0].cpu().numpy()
                 fixed_np = fix_img[bs_index, 0].cpu().numpy()
                 warped_np = warped_mov_img[bs_index, 0].cpu().numpy()
-                
+                print(moving_np.dtype, moving_np.min(), moving_np.max())
+                print(fixed_np.dtype, fixed_np.min(), fixed_np.max())
+                print(warped_np.dtype, warped_np.min(), warped_np.max())
+                raise
                 io.imsave(output_dir / f'sample_{sample_idx:03d}_moving.png', moving_np)
                 io.imsave(output_dir / f'sample_{sample_idx:03d}_fixed.png', fixed_np)
                 io.imsave(output_dir / f'sample_{sample_idx:03d}_warped.png', warped_np)
