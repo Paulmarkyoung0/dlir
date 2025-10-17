@@ -55,14 +55,14 @@ opt = parser.parse_args()
 def test(model_dir):
     bs = 1
     model = UNet(4, 2, opt.start_channel).cuda()
-    
+
     model_idx = -1
     model_path = Path(model_dir)
     model_files = natsorted(model_path.iterdir())
     print(f'Best model: {model_files[model_idx].name}')
     best_model = torch.load(model_files[model_idx])
     model.load_state_dict(best_model)
-    
+
     torch.backends.cudnn.benchmark = True
     transform = SpatialTransform().cuda()
     model.eval()
@@ -71,32 +71,30 @@ def test(model_dir):
     device = torch.device("cuda" if use_cuda else "cpu")
     test_set = ValidationDataset(opt.datapath, img_file='test_list.txt')
     test_generator = Data.DataLoader(dataset=test_set, batch_size=bs, shuffle=False, num_workers=2)
-    
+
     output_dir = Path('inference_outputs')
     output_dir.mkdir(exist_ok=True)
-    
+
     sample_idx = 0
     for mov_img, fix_img in test_generator:
         with torch.no_grad():
             mov_img_gpu = mov_img.float().to(device)
             fix_img_gpu = fix_img.float().to(device)
-            
+
             V_xy = model(mov_img_gpu, fix_img_gpu)
             _, warped_mov_img = transform(mov_img_gpu, V_xy.permute(0, 2, 3, 1))
-            
+
             for bs_index in range(bs):
                 moving_np = img_as_ubyte(mov_img[bs_index, 0].cpu().numpy())
                 fixed_np = img_as_ubyte(fix_img[bs_index, 0].cpu().numpy())
                 warped_np = img_as_ubyte(warped_mov_img[bs_index, 0].cpu().numpy())
-                print(moving_np.dtype, moving_np.min(), moving_np.max())
-                print(fixed_np.dtype, fixed_np.min(), fixed_np.max())
-                print(warped_np.dtype, warped_np.min(), warped_np.max())
+            
                 io.imsave(output_dir / f'sample_{sample_idx:03d}_moving.png', moving_np)
                 io.imsave(output_dir / f'sample_{sample_idx:03d}_fixed.png', fixed_np)
                 io.imsave(output_dir / f'sample_{sample_idx:03d}_warped.png', warped_np)
-                
+
                 sample_idx += 1
-    
+
     print(f'Saved {sample_idx} image sets to {output_dir}')
 
 
