@@ -86,9 +86,9 @@ def test(model_dir):
 
             for bs_index in range(bs):
                 try:
-                    moving_np = mov_img[bs_index].cpu().numpy()
-                    fixed_np = fix_img[bs_index].cpu().numpy()
-                    warped_np = warped_mov_img[bs_index, 0].cpu().numpy()
+                    moving_np = mov_img[bs_index].clamp(0,1).cpu().numpy()
+                    fixed_np = fix_img[bs_index].clamp(0,1).cpu().numpy()
+                    warped_np = warped_mov_img[bs_index, 0].clamp(0,1).cpu().numpy()
                     moving_np = img_as_ubyte(moving_np)
                     fixed_np = img_as_ubyte(fixed_np)
                     warped_np = img_as_ubyte(warped_np)
