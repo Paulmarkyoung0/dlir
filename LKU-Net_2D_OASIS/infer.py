@@ -97,6 +97,7 @@ def test(model_dir):
                     print(moving_np.dtype, moving_np.min(), moving_np.max())
                     print(fixed_np.dtype, fixed_np.min(), fixed_np.max())
                     print(warped_np.dtype, warped_np.min(), warped_np.max())
+                    raise e
                 io.imsave(output_dir / f'sample_{sample_idx:03d}_moving.png', moving_np)
                 io.imsave(output_dir / f'sample_{sample_idx:03d}_fixed.png', fixed_np)
                 io.imsave(output_dir / f'sample_{sample_idx:03d}_warped.png', warped_np)
