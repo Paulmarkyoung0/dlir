@@ -56,7 +56,7 @@ parser.add_argument("--using_l2", type=int,
                     help="using l2 or not")
 parser.add_argument("--loss", type=str,
                     dest="loss",
-                    default='dice',
+                    default='truth',
                     help="truth or dice")
 opt = parser.parse_args()
 
