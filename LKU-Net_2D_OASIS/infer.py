@@ -6,7 +6,6 @@ from Functions import ValidationDataset
 import torch.utils.data as Data
 from natsort import natsorted
 from torchvision.utils import save_image
-from skimage import io, img_as_ubyte
 
 parser = ArgumentParser()
 parser.add_argument("--lr", type=float,
