@@ -30,7 +30,7 @@ parser.add_argument("--data_labda", type=float,
                     dest="data_labda", default=0.02,
                     help="data_labda loss: suggested range 0.1 to 10")
 parser.add_argument("--smth_labda", type=float,
-                    dest="smth_labda", default=0.02,
+                    dest="smth_labda", default=5.0,
                     help="labda loss: suggested range 0.1 to 10")
 parser.add_argument("--checkpoint", type=int,
                     dest="checkpoint", default=4000,
