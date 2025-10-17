@@ -1,7 +1,7 @@
 from argparse import ArgumentParser
 import numpy as np
 import torch
-from Models import *
+from Models import UNet, MSE, SAD, NCC, Dice, smoothloss, SpatialTransform
 from Functions import TrainDataset, ValidationDataset
 import torch.utils.data as Data
 import matplotlib.pyplot as plt
