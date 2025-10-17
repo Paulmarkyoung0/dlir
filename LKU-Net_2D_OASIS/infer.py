@@ -54,7 +54,7 @@ opt = parser.parse_args()
 
 def test(model_dir):
     bs = 1
-    model = UNet(2, 2, opt.start_channel).cuda()
+    model = UNet(4, 2, opt.start_channel).cuda()
     
     model_idx = -1
     model_path = Path(model_dir)
