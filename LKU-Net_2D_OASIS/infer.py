@@ -90,7 +90,7 @@ def test(model_dir):
                     fixed_np = fix_img[bs_index].cpu().numpy()
                     warped_np = warped_mov_img[bs_index, 0].cpu().numpy()
                     moving_np = img_as_ubyte(moving_np)
-                    fix_img = img_as_ubyte(fixed_np)
+                    fixed_np = img_as_ubyte(fixed_np)
                     warped_np = img_as_ubyte(warped_np)
                 except Exception as e:
                     print(f'Error processing sample {sample_idx}: {e}')
