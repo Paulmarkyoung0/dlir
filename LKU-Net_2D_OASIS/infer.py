@@ -40,8 +40,8 @@ parser.add_argument("--start_channel", type=int,
                     help="number of start channels")
 parser.add_argument("--datapath", type=str,
                     dest="datapath",
-                    default='/bask/projects/d/duanj-ai-imaging/Accreg/brain/OASIS_AffineData/',
-                    help="data path for training images")
+                    default='../data',
+                    help="data path for test images")
 parser.add_argument("--trainingset", type=int,
                     dest="trainingset", default=4,
                     help="1 Half : 200 Images, 2 The other Half 200 Images 3 All 400 Images")
