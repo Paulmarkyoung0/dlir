@@ -7,7 +7,7 @@ from Models import UNet, SpatialTransform
 from Functions import ValidationDataset
 import torch.utils.data as Data
 from natsort import natsorted
-from skimage import io
+from skimage import io, img_as_ubyte
 
 parser = ArgumentParser()
 parser.add_argument("--lr", type=float,
@@ -85,13 +85,12 @@ def test(model_dir):
             _, warped_mov_img = transform(mov_img_gpu, V_xy.permute(0, 2, 3, 1))
             
             for bs_index in range(bs):
-                moving_np = mov_img[bs_index, 0].cpu().numpy()
-                fixed_np = fix_img[bs_index, 0].cpu().numpy()
-                warped_np = warped_mov_img[bs_index, 0].cpu().numpy()
+                moving_np = img_as_ubyte(mov_img[bs_index, 0].cpu().numpy())
+                fixed_np = img_as_ubyte(fix_img[bs_index, 0].cpu().numpy())
+                warped_np = img_as_ubyte(warped_mov_img[bs_index, 0].cpu().numpy())
                 print(moving_np.dtype, moving_np.min(), moving_np.max())
                 print(fixed_np.dtype, fixed_np.min(), fixed_np.max())
                 print(warped_np.dtype, warped_np.min(), warped_np.max())
-                raise
                 io.imsave(output_dir / f'sample_{sample_idx:03d}_moving.png', moving_np)
                 io.imsave(output_dir / f'sample_{sample_idx:03d}_fixed.png', fixed_np)
                 io.imsave(output_dir / f'sample_{sample_idx:03d}_warped.png', warped_np)
